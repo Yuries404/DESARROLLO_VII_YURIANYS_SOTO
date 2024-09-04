@@ -2,24 +2,23 @@
 include 'funciones_tienda.php';
 
 $precio_producto = [
-    'camisa' => 50,
-    'pantalon' => 70,
-    'zapatos' => 80,
-    'calcetines' => 10,
-    'gorra' => 25
+    'camisa' => 20,
+    'pantalon' => 50,
+    'zapatos' => 75,
+    'calcetines' => 5,
+    'gorra' => 15
 ];
 
 $carrito = [
     'camisa' => 2,
-    'pantalon' => 1,
+    'pantalon' => 2,
     'zapatos' => 1,
     'calcetines' => 3,
-    'gorra' => 0
+    'gorra' => 2
 ];
 
 
 $subtotal = 0;
-
 foreach ($carrito as $producto  => $cantidad) {
     if ($cantidad > 0) {
         echo $cantidad;
@@ -38,7 +37,7 @@ echo "<tr><th>Producto</th><th>Cantidad</th><th>Precio Unitario</th><th>Precio T
 foreach ($carrito as $producto => $cantidad) {
 
         $precio_total = $precio_producto[$producto] * $cantidad;
-        echo "<tr>";
+        echo "<tr><tr>";
         echo "<td>{$producto}</td>";
         echo "<td>{$cantidad}</td>";
         echo "<td>\${$precio_producto[$producto]}</td>";
