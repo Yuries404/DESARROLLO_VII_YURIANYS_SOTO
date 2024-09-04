@@ -32,10 +32,11 @@ $impuesto = aplicar_impuesto($subtotal);
 $total = calcular_total($subtotal, $descuento, $impuesto);
 
 echo "<h2>Resumen de Compra</h2>";
+echo "<table border='1' cellpadding='10'>";
 echo "<tr><th>Producto</th><th>Cantidad</th><th>Precio Unitario</th><th>Precio Total</th></tr>";
 
 foreach ($carrito as $producto => $cantidad) {
-    if ($cantidad > 0) {
+
         $precio_total = $precio_producto[$producto] * $cantidad;
         echo "<tr>";
         echo "<td>{$producto}</td>";
@@ -43,7 +44,6 @@ foreach ($carrito as $producto => $cantidad) {
         echo "<td>\${$precio_producto[$producto]}</td>";
         echo "<td>\${$precio_total}</td>";
         echo "</tr>";
-    }
 }
 
 echo "</table>";
