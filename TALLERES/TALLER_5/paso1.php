@@ -32,7 +32,6 @@ function imprimirCiudadesOrdenadas($arr) {
 // 8. Llamar a la función
 imprimirCiudadesOrdenadas($ciudades);
 
-// 9. Crear la función para contar las ciudades que comienzan con una letra específica
 function contarCiudadesPorInicial($arr, $inicial) {
     $contador = 0;
     foreach ($arr as $ciudad) {
@@ -43,7 +42,7 @@ function contarCiudadesPorInicial($arr, $inicial) {
     return $contador;
 }
 
-// 10. Ejemplo de uso de la nueva función
+
 $letra = 'S';
 $cantidad = contarCiudadesPorInicial($ciudades, $letra);
 echo "\nNúmero de ciudades que comienzan con la letra '$letra': $cantidad\n";
