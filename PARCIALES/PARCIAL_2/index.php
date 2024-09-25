@@ -5,6 +5,7 @@ error_reporting(E_ALL);
 
 require_once 'clases.php';
 
+
 // Obtener la acción del query string, 'list' por defecto
 $action = isset($_GET['action']) ? $_GET['action'] : 'list';
 
@@ -16,25 +17,105 @@ $sortField = isset($_GET['field']) ? $_GET['field'] : 'id';
 $sortDirection = isset($_GET['direction']) ? $_GET['direction'] : 'ASC';
 $filterEstado = isset($_GET['filterEstado']) ? $_GET['filterEstado'] : '';
 
-$tareas = null;
+//$tareas = null;
 
 // Procesar la acción
+$gestorTareas = new GestorTareas();
+
+
 switch ($action) {
+
+    
     case 'add':
-        // Los estudiantes deben implementar esta lógica
+        if (isset($_GET['titulo'], $_GET['descripcion'], $_GET['prioridad'], $_GET['tipo'])) {
+            $datos = [
+                'id' => uniqid(),
+                'titulo' => $_GET['titulo'],
+                'descripcion' => $_GET['descripcion'],
+                'prioridad' => $_GET['prioridad'],
+                'estado' => 'pendiente', // Estado por defecto
+                'fechaCreacion' => date('Y-m-d H:i:s'),
+                'tipo' => $_GET['tipo'],
+            ];
+    
+            // Agregar campos específicos según el tipo
+            switch ($_GET['tipo']) {
+                case 'desarrollo':
+                    $datos['lenguajeProgramacion'] = $_GET['lenguajeProgramacion'];
+                    break;
+                case 'diseno':
+                    $datos['herramientaDiseno'] = $_GET['herramientaDiseno'];
+                    break;
+                case 'testing':
+                    $datos['tipoTest'] = $_GET['tipoTest'];
+                    break;
+            }
+    
+            // Cargar y actualizar JSON
+            $tareas = $gestorTareas->cargarTareas();  // Cargar las tareas existentes
+            $tareas[] = $datos;  // Añadir la nueva tarea
+            file_put_contents('tareas.json', json_encode($tareas));  // Guardar en el archivo
+            
+        }
         break;
+    
 
-    case 'edit':
-        // Los estudiantes deben implementar esta lógica
-        break;
+        case 'edit':
+            if (isset($_GET['id'])) {
+                // Buscar la tarea en el archivo JSON
+                foreach ($tareas as &$tarea) {
+                    if ($tarea['id'] == $_GET['id']) {
+                        $tarea['titulo'] = $_GET['titulo'];
+                        $tarea['descripcion'] = $_GET['descripcion'];
+                        $tarea['prioridad'] = $_GET['prioridad'];
+                        $tarea['tipo'] = $_GET['tipo'];
+        
+                        // Actualizar campos específicos
+                        switch ($_GET['tipo']) {
+                            case 'desarrollo':
+                                $tarea['lenguajeProgramacion'] = $_GET['lenguajeProgramacion'];
+                                break;
+                            case 'diseno':
+                                $tarea['herramientaDiseno'] = $_GET['herramientaDiseno'];
+                                break;
+                            case 'testing':
+                                $tarea['tipoTest'] = $_GET['tipoTest'];
+                                break;
+                        }
+        
+                        file_put_contents('tareas.json', json_encode($tareas));
+                        $mensaje = "Tarea editada exitosamente.";
+                        break;
+                    }
+                }
+            }
+            break;
+        
 
-    case 'delete':
-        // Los estudiantes deben implementar esta lógica
-        break;
+            case 'delete':
+                if (isset($_GET['id'])) {
+                    $tareas = array_filter($tareas, function ($tarea) {
+                        return $tarea['id'] !== $_GET['id'];
+                    });
+                    file_put_contents('tareas.json', json_encode($tareas));
+                    $mensaje = "Tarea eliminada exitosamente.";
+                }
+                break;
+            
 
-    case 'status':
-        // Los estudiantes deben implementar esta lógica
-        break;
+                case 'status':
+                    if (isset($_GET['id'], $_GET['estado'])) {
+                        foreach ($tareas as &$tarea) {
+                            if ($tarea['id'] == $_GET['id']) {
+                                $tarea['estado'] = $_GET['estado'];
+                                file_put_contents('tareas.json', json_encode($tareas));
+                                $mensaje = "Estado de la tarea actualizado.";
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                
 
     case 'filter':
         // Los estudiantes deben implementar esta lógica
@@ -214,3 +295,4 @@ if ($tareas === null) {
     </script>
 </body>
 </html>
+
