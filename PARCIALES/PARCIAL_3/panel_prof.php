@@ -26,11 +26,19 @@ if(!isset($_SESSION['usuario'])) {
     <?php
     echo "<table border='1' cellpadding='10'>";
     echo "<tr><th>Nombre </th><th>Notas</th></tr>";
-    if ($usuario= "Ester"){
-        
+
+    foreach ($usuario as $usuarios)
+    if ($usuario["docente"]= "Ester"){
+        echo "<tr>";
+        echo "<td>{$usuarios["nombre"]} </td>";
+        echo "<td>{$usuarios["calificaciones"]}</td>";
+        echo "</tr>";
     }
     else {
-
+        echo "<tr>";
+        echo "<td>{$usuarios["nombre"]} </td>";
+        echo "<td>{$usuarios["calificaciones"]}</td>";
+        echo "</tr>";
     }
 
     ?>
