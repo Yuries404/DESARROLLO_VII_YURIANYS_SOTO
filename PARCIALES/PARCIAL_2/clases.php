@@ -1,11 +1,11 @@
 <?php
 // Archivo: clases.php
+
 interface Detalle {
     public function obtenerDetallesEspecificos(): string;
 }
 
-
-class Tarea implements Detalle {
+class Tarea {
     public $id;
     public $titulo;
     public $descripcion;
@@ -19,62 +19,14 @@ class Tarea implements Detalle {
             $this->$key = $value;
         }
     }
-
-    // Implementación de la interfaz Detalles
-    public function obtenerDetallesEspecificos(): string {
-        return "Tarea general sin detalles específicos.";
-    }
-
-    // Getters para obtener estado y prioridad
-    public function getEstado() {
-        return $this->estado;
-    }
-
-    public function getPrioridad() {
-        return $this->prioridad;
-    }
 }
 
-
-class GestorTareas {
-    private $tareas = [];
-
-    public function cargarTareas() {
-        $json = file_get_contents('tareas.json');
-        $data = json_decode($json, true);
-
-        foreach ($data as $tareaData) {
-            switch ($tareaData['tipo']) {
-                case 'desarrollo':
-                    $tarea = new TareaDesarrollo($tareaData, $tareaData['lenguajeProgramacion']);
-                    break;
-                case 'diseno':
-                    $tarea = new TareaDiseno($tareaData, $tareaData['herramientaDiseno']);
-                    break;
-                case 'testing':
-                    $tarea = new TareaTesting($tareaData, $tareaData['tipoTest']);
-                    break;
-                default:
-                    $tarea = new Tarea($tareaData); // En caso de tipo desconocido
-                    break;
-            }
-            $this->tareas[] = $tarea;
-        }
-
-        return $this->tareas;
-    }
-}
-
-
-
-
-
-class TareaDesarrollo extends Tarea {
+class TareaDesarrollo extends Tarea implements Detalle {
     public $lenguajeProgramacion;
 
-    public function __construct($datos, $lenguajeProgramacion) {
+    public function __construct($datos) {
         parent::__construct($datos);
-        $this->lenguajeProgramacion = $lenguajeProgramacion;
+        $this->lenguajeProgramacion = $datos['lenguajeProgramacion'] ?? '';
     }
 
     public function obtenerDetallesEspecificos(): string {
@@ -82,12 +34,12 @@ class TareaDesarrollo extends Tarea {
     }
 }
 
-class TareaDiseno extends Tarea {
+class TareaDiseno extends Tarea implements Detalle {
     public $herramientaDiseno;
 
-    public function __construct($datos, $herramientaDiseno) {
+    public function __construct($datos) {
         parent::__construct($datos);
-        $this->herramientaDiseno = $herramientaDiseno;
+        $this->herramientaDiseno = $datos['herramientaDiseno'] ?? '';
     }
 
     public function obtenerDetallesEspecificos(): string {
@@ -95,12 +47,12 @@ class TareaDiseno extends Tarea {
     }
 }
 
-class TareaTesting extends Tarea {
+class TareaTesting extends Tarea implements Detalle {
     public $tipoTest;
 
-    public function __construct($datos, $tipoTest) {
+    public function __construct($datos) {
         parent::__construct($datos);
-        $this->tipoTest = $tipoTest;
+        $this->tipoTest = $datos['tipoTest'] ?? '';
     }
 
     public function obtenerDetallesEspecificos(): string {
@@ -108,9 +60,107 @@ class TareaTesting extends Tarea {
     }
 }
 
+class GestorTareas {
+    public $tareas = [];
 
-// Implementar:
-// 1. La interfaz Detalle
-// 2. Modificar la clase Tarea para implementar la interfaz Detalle
-// 3. Las clases TareaDesarrollo, TareaDiseno y TareaTesting que hereden de Tarea
+    public function cargarTareas() {
+        if (file_exists('tareas.json')) {
+            $json = file_get_contents('tareas.json');
+            $data = json_decode($json, true);
+            foreach ($data as $tareaData) {
+                switch ($tareaData['tipo']) {
+                    case 'desarrollo':
+                        $tarea = new TareaDesarrollo($tareaData);
+                        break;
+                    case 'diseno':
+                        $tarea = new TareaDiseno($tareaData);
+                        break;
+                    case 'testing':
+                        $tarea = new TareaTesting($tareaData);
+                        break;
+                    default:
+                        $tarea = new Tarea($tareaData);
+                        break;
+                }
+                $this->tareas[] = $tarea;
+            }
+        }
+        return $this->tareas;
+    }
 
+    public function guardarTareas() {
+        $data = [];
+        foreach ($this->tareas as $tarea) {
+            $data[] = get_object_vars($tarea);
+        }
+        file_put_contents('tareas.json', json_encode($data, JSON_PRETTY_PRINT));
+    }
+
+    public function agregarTarea($tarea) {
+        $this->tareas[] = $tarea;
+        $this->guardarTareas();
+    }
+
+    public function eliminarTarea($id) {
+        foreach ($this->tareas as $key => $tarea) {
+            if ($tarea->id == $id) {
+                unset($this->tareas[$key]);
+                $this->tareas = array_values($this->tareas); // Reindexar el arreglo
+                $this->guardarTareas();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function actualizarTarea($tareaActualizada) {
+        foreach ($this->tareas as $key => $tarea) {
+            if ($tarea->id == $tareaActualizada->id) {
+                $this->tareas[$key] = $tareaActualizada;
+                $this->guardarTareas();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function actualizarEstadoTarea($id, $nuevoEstado) {
+        foreach ($this->tareas as $key => $tarea) {
+            if ($tarea->id == $id) {
+                $tarea->estado = $nuevoEstado;
+                $this->tareas[$key] = $tarea;
+                $this->guardarTareas();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function buscarTareasPorEstado($estado) {
+        $tareasFiltradas = [];
+        foreach ($this->tareas as $tarea) {
+            if ($tarea->estado == $estado) {
+                $tareasFiltradas[] = $tarea;
+            }
+        }
+        return $tareasFiltradas;
+    }
+
+    public function listarTareas($filtroEstado = '') {
+        if ($filtroEstado == '') {
+            return $this->tareas;
+        } else {
+            return $this->buscarTareasPorEstado($filtroEstado);
+        }
+    }
+
+    public function getNuevoId() {
+        $maxId = 0;
+        foreach ($this->tareas as $tarea) {
+            if ($tarea->id > $maxId) {
+                $maxId = $tarea->id;
+            }
+        }
+        return $maxId + 1;
+    }
+}

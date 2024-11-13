@@ -1,0 +1,29 @@
+[
+    {
+        "nombre": "yuri",
+        "email": "no@no.com",
+        "sitio_web": "",
+        "genero": "femenino",
+        "intereses": [
+            "musica"
+        ],
+        "comentarios": "hola",
+        "fecha_nacimiento": "1999-05-06",
+        "edad": 25,
+        "foto_perfil": "uploads\/6734c88a437ce-WhatsApp Image.jpeg"
+    },
+    {
+        "nombre": "yuriii",
+        "email": "noo@no.com",
+        "sitio_web": "",
+        "genero": "femenino",
+        "intereses": [
+            "musica",
+            "lectura"
+        ],
+        "comentarios": "prueba 2",
+        "fecha_nacimiento": "2024-10-29",
+        "edad": 0,
+        "foto_perfil": "uploads\/6734c96aa75ed-0e68e991d536b7e2e65659c1956b603a.jpg"
+    }
+]

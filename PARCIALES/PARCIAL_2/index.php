@@ -5,6 +5,8 @@ error_reporting(E_ALL);
 
 require_once 'clases.php';
 
+$gestorTareas = new GestorTareas();
+$gestorTareas->cargarTareas();
 
 // Obtener la acción del query string, 'list' por defecto
 $action = isset($_GET['action']) ? $_GET['action'] : 'list';
@@ -17,120 +19,239 @@ $sortField = isset($_GET['field']) ? $_GET['field'] : 'id';
 $sortDirection = isset($_GET['direction']) ? $_GET['direction'] : 'ASC';
 $filterEstado = isset($_GET['filterEstado']) ? $_GET['filterEstado'] : '';
 
-//$tareas = null;
+$tareas = null;
+
+$estadosLegibles = [
+    'pendiente' => 'Pendiente',
+    'en_progreso' => 'En Progreso',
+    'completada' => 'Completada'
+];
+
+$prioridadesLegibles = [
+    1 => 'Alta',
+    2 => 'Media alta',
+    3 => 'Media',
+    4 => 'Media baja',
+    5 => 'Baja'
+];
 
 // Procesar la acción
-$gestorTareas = new GestorTareas();
-
-
 switch ($action) {
-
-    
     case 'add':
-        if (isset($_GET['titulo'], $_GET['descripcion'], $_GET['prioridad'], $_GET['tipo'])) {
-            $datos = [
-                'id' => uniqid(),
-                'titulo' => $_GET['titulo'],
-                'descripcion' => $_GET['descripcion'],
-                'prioridad' => $_GET['prioridad'],
-                'estado' => 'pendiente', // Estado por defecto
-                'fechaCreacion' => date('Y-m-d H:i:s'),
-                'tipo' => $_GET['tipo'],
-            ];
-    
-            // Agregar campos específicos según el tipo
-            switch ($_GET['tipo']) {
+        // Obtener datos del formulario
+        $titulo = isset($_GET['titulo']) ? $_GET['titulo'] : '';
+        $descripcion = isset($_GET['descripcion']) ? $_GET['descripcion'] : '';
+        $prioridad = isset($_GET['prioridad']) ? $_GET['prioridad'] : '';
+        $tipo = isset($_GET['tipo']) ? $_GET['tipo'] : '';
+        $estado = 'pendiente'; // Estado por defecto
+        $fechaCreacion = date('Y-m-d');
+
+        // Generar nuevo ID
+        $nuevoId = $gestorTareas->getNuevoId();
+
+        // Crear la tarea correspondiente
+        switch ($tipo) {
+            case 'desarrollo':
+                $lenguajeProgramacion = isset($_GET['lenguajeProgramacion']) ? $_GET['lenguajeProgramacion'] : '';
+                $datos = [
+                    'id' => $nuevoId,
+                    'titulo' => $titulo,
+                    'descripcion' => $descripcion,
+                    'prioridad' => $prioridad,
+                    'tipo' => $tipo,
+                    'estado' => $estado,
+                    'fechaCreacion' => $fechaCreacion,
+                    'lenguajeProgramacion' => $lenguajeProgramacion
+                ];
+                $tarea = new TareaDesarrollo($datos);
+                break;
+            case 'diseno':
+                $herramientaDiseno = isset($_GET['herramientaDiseno']) ? $_GET['herramientaDiseno'] : '';
+                $datos = [
+                    'id' => $nuevoId,
+                    'titulo' => $titulo,
+                    'descripcion' => $descripcion,
+                    'prioridad' => $prioridad,
+                    'tipo' => $tipo,
+                    'estado' => $estado,
+                    'fechaCreacion' => $fechaCreacion,
+                    'herramientaDiseno' => $herramientaDiseno
+                ];
+                $tarea = new TareaDiseno($datos);
+                break;
+            case 'testing':
+                $tipoTest = isset($_GET['tipoTest']) ? $_GET['tipoTest'] : '';
+                $datos = [
+                    'id' => $nuevoId,
+                    'titulo' => $titulo,
+                    'descripcion' => $descripcion,
+                    'prioridad' => $prioridad,
+                    'tipo' => $tipo,
+                    'estado' => $estado,
+                    'fechaCreacion' => $fechaCreacion,
+                    'tipoTest' => $tipoTest
+                ];
+                $tarea = new TareaTesting($datos);
+                break;
+            default:
+                $mensaje = "Tipo de tarea no válido.";
+                break;
+        }
+
+        if (isset($tarea)) {
+            $gestorTareas->agregarTarea($tarea);
+            $mensaje = "Tarea agregada correctamente.";
+        } else {
+            if (!isset($mensaje)) {
+                $mensaje = "Error al agregar la tarea.";
+            }
+        }
+
+        $tareas = $gestorTareas->listarTareas();
+        break;
+
+    case 'edit':
+        if (isset($_GET['id']) && !isset($_GET['titulo'])) {
+            // Mostrar datos en el formulario para editar
+            $id = $_GET['id'];
+            foreach ($gestorTareas->tareas as $tarea) {
+                if ($tarea->id == $id) {
+                    $tareaEnEdicion = $tarea;
+                    break;
+                }
+            }
+            $tareas = $gestorTareas->listarTareas();
+        } elseif (isset($_GET['id']) && isset($_GET['titulo'])) {
+            // Actualizar la tarea
+            $id = $_GET['id'];
+            $titulo = $_GET['titulo'];
+            $descripcion = $_GET['descripcion'];
+            $prioridad = $_GET['prioridad'];
+            $tipo = $_GET['tipo'];
+            $estado = isset($_GET['estado']) ? $_GET['estado'] : 'pendiente';
+
+            switch ($tipo) {
                 case 'desarrollo':
-                    $datos['lenguajeProgramacion'] = $_GET['lenguajeProgramacion'];
+                    $lenguajeProgramacion = isset($_GET['lenguajeProgramacion']) ? $_GET['lenguajeProgramacion'] : '';
+                    $datos = [
+                        'id' => $id,
+                        'titulo' => $titulo,
+                        'descripcion' => $descripcion,
+                        'prioridad' => $prioridad,
+                        'tipo' => $tipo,
+                        'estado' => $estado,
+                        'fechaCreacion' => date('Y-m-d'),
+                        'lenguajeProgramacion' => $lenguajeProgramacion
+                    ];
+                    $tareaActualizada = new TareaDesarrollo($datos);
                     break;
                 case 'diseno':
-                    $datos['herramientaDiseno'] = $_GET['herramientaDiseno'];
+                    $herramientaDiseno = isset($_GET['herramientaDiseno']) ? $_GET['herramientaDiseno'] : '';
+                    $datos = [
+                        'id' => $id,
+                        'titulo' => $titulo,
+                        'descripcion' => $descripcion,
+                        'prioridad' => $prioridad,
+                        'tipo' => $tipo,
+                        'estado' => $estado,
+                        'fechaCreacion' => date('Y-m-d'),
+                        'herramientaDiseno' => $herramientaDiseno
+                    ];
+                    $tareaActualizada = new TareaDiseno($datos);
                     break;
                 case 'testing':
-                    $datos['tipoTest'] = $_GET['tipoTest'];
+                    $tipoTest = isset($_GET['tipoTest']) ? $_GET['tipoTest'] : '';
+                    $datos = [
+                        'id' => $id,
+                        'titulo' => $titulo,
+                        'descripcion' => $descripcion,
+                        'prioridad' => $prioridad,
+                        'tipo' => $tipo,
+                        'estado' => $estado,
+                        'fechaCreacion' => date('Y-m-d'),
+                        'tipoTest' => $tipoTest
+                    ];
+                    $tareaActualizada = new TareaTesting($datos);
+                    break;
+                default:
+                    $mensaje = "Tipo de tarea no válido.";
                     break;
             }
-    
-            // Cargar y actualizar JSON
-            $tareas = $gestorTareas->cargarTareas();  // Cargar las tareas existentes
-            $tareas[] = $datos;  // Añadir la nueva tarea
-            file_put_contents('tareas.json', json_encode($tareas));  // Guardar en el archivo
-            
+
+            if (isset($tareaActualizada)) {
+                $gestorTareas->actualizarTarea($tareaActualizada);
+                $mensaje = "Tarea actualizada correctamente.";
+            } else {
+                if (!isset($mensaje)) {
+                    $mensaje = "Error al actualizar la tarea.";
+                }
+            }
+
+            $tareas = $gestorTareas->listarTareas();
+        } else {
+            $mensaje = "Datos incompletos para editar la tarea.";
+            $tareas = $gestorTareas->listarTareas();
         }
         break;
-    
 
-        case 'edit':
-            if (isset($_GET['id'])) {
-                // Buscar la tarea en el archivo JSON
-                foreach ($tareas as &$tarea) {
-                    if ($tarea['id'] == $_GET['id']) {
-                        $tarea['titulo'] = $_GET['titulo'];
-                        $tarea['descripcion'] = $_GET['descripcion'];
-                        $tarea['prioridad'] = $_GET['prioridad'];
-                        $tarea['tipo'] = $_GET['tipo'];
-        
-                        // Actualizar campos específicos
-                        switch ($_GET['tipo']) {
-                            case 'desarrollo':
-                                $tarea['lenguajeProgramacion'] = $_GET['lenguajeProgramacion'];
-                                break;
-                            case 'diseno':
-                                $tarea['herramientaDiseno'] = $_GET['herramientaDiseno'];
-                                break;
-                            case 'testing':
-                                $tarea['tipoTest'] = $_GET['tipoTest'];
-                                break;
-                        }
-        
-                        file_put_contents('tareas.json', json_encode($tareas));
-                        $mensaje = "Tarea editada exitosamente.";
-                        break;
-                    }
-                }
+    case 'delete':
+        if (isset($_GET['id'])) {
+            $id = $_GET['id'];
+            $resultado = $gestorTareas->eliminarTarea($id);
+            if ($resultado) {
+                $mensaje = "Tarea eliminada correctamente.";
+            } else {
+                $mensaje = "No se pudo eliminar la tarea.";
             }
-            break;
-        
+        } else {
+            $mensaje = "ID de tarea no especificado.";
+        }
+        $tareas = $gestorTareas->listarTareas();
+        break;
 
-            case 'delete':
-                if (isset($_GET['id'])) {
-                    $tareas = array_filter($tareas, function ($tarea) {
-                        return $tarea['id'] !== $_GET['id'];
-                    });
-                    file_put_contents('tareas.json', json_encode($tareas));
-                    $mensaje = "Tarea eliminada exitosamente.";
-                }
-                break;
-            
-
-                case 'status':
-                    if (isset($_GET['id'], $_GET['estado'])) {
-                        foreach ($tareas as &$tarea) {
-                            if ($tarea['id'] == $_GET['id']) {
-                                $tarea['estado'] = $_GET['estado'];
-                                file_put_contents('tareas.json', json_encode($tareas));
-                                $mensaje = "Estado de la tarea actualizado.";
-                                break;
-                            }
-                        }
-                    }
-                    break;
-                
+    case 'status':
+        if (isset($_GET['id']) && isset($_GET['estado'])) {
+            $id = $_GET['id'];
+            $nuevoEstado = $_GET['estado'];
+            $resultado = $gestorTareas->actualizarEstadoTarea($id, $nuevoEstado);
+            if ($resultado) {
+                $mensaje = "Estado de la tarea actualizado correctamente.";
+            } else {
+                $mensaje = "No se pudo actualizar el estado de la tarea.";
+            }
+        } else {
+            $mensaje = "Datos incompletos para actualizar el estado de la tarea.";
+        }
+        $tareas = $gestorTareas->listarTareas();
+        break;
 
     case 'filter':
-        // Los estudiantes deben implementar esta lógica
+        $filterEstado = isset($_GET['filterEstado']) ? $_GET['filterEstado'] : '';
+        $tareas = $gestorTareas->listarTareas($filterEstado);
+        break;
+
+    case 'sort':
+        $sortField = isset($_GET['field']) ? $_GET['field'] : 'id';
+        $sortDirection = isset($_GET['direction']) ? $_GET['direction'] : 'ASC';
+        $tareas = $gestorTareas->listarTareas($filterEstado);
+        usort($tareas, function($a, $b) use ($sortField, $sortDirection) {
+            if ($sortDirection == 'ASC') {
+                return strcmp($a->$sortField, $b->$sortField);
+            } else {
+                return strcmp($b->$sortField, $a->$sortField);
+            }
+        });
         break;
 
     case 'list':
     default:
-        // Por ahora, simplemente cargamos todas las tareas
+        $tareas = $gestorTareas->listarTareas($filterEstado);
         break;
 }
 
 // Cargar las tareas si aún no se han cargado
 if ($tareas === null) {
-    $gestorTareas = new GestorTareas();
-    $tareas = $gestorTareas->cargarTareas();
+    $tareas = $gestorTareas->listarTareas($filterEstado);
 }
 
 ?>
@@ -172,9 +293,9 @@ if ($tareas === null) {
                 <select class="form-select" name="prioridad" required>
                     <option value="">Prioridad</option>
                     <?php
-                    for ($i = 1; $i <= 5; $i++) {
-                        $selected = ($tareaEnEdicion && $tareaEnEdicion->prioridad == $i) ? 'selected' : '';
-                        echo "<option value=\"$i\" $selected>$i " . ($i == 1 ? '(Alta)' : ($i == 5 ? '(Baja)' : '')) . "</option>";
+                    foreach ($prioridadesLegibles as $valor => $texto) {
+                        $selected = ($tareaEnEdicion && $tareaEnEdicion->prioridad == $valor) ? 'selected' : '';
+                        echo "<option value=\"$valor\" $selected>$valor ($texto)</option>";
                     }
                     ?>
                 </select>
@@ -188,13 +309,15 @@ if ($tareas === null) {
                 </select>
             </div>
             <div class="col" id="campoEspecifico" style="display:none;">
-                <input type="text" class="form-control" id="campoDesarrollo" name="lenguajeProgramacion" placeholder="Lenguaje de Programación" style="display:none;">
-                <input type="text" class="form-control" id="campoDiseno" name="herramientaDiseno" placeholder="Herramienta de Diseño" style="display:none;">
+                <input type="text" class="form-control" id="campoDesarrollo" name="lenguajeProgramacion" placeholder="Lenguaje de Programación" style="display:none;"
+                       value="<?php echo $tareaEnEdicion && isset($tareaEnEdicion->lenguajeProgramacion) ? $tareaEnEdicion->lenguajeProgramacion : ''; ?>">
+                <input type="text" class="form-control" id="campoDiseno" name="herramientaDiseno" placeholder="Herramienta de Diseño" style="display:none;"
+                       value="<?php echo $tareaEnEdicion && isset($tareaEnEdicion->herramientaDiseno) ? $tareaEnEdicion->herramientaDiseno : ''; ?>">
                 <select class="form-select" id="campoTesting" name="tipoTest" style="display:none;">
                     <option value="">Tipo de Test</option>
-                    <option value="unitario">Unitario</option>
-                    <option value="integracion">Integración</option>
-                    <option value="e2e">E2E</option>
+                    <option value="unitario" <?php echo ($tareaEnEdicion && isset($tareaEnEdicion->tipoTest) && $tareaEnEdicion->tipoTest == 'unitario') ? 'selected' : ''; ?>>Unitario</option>
+                    <option value="integracion" <?php echo ($tareaEnEdicion && isset($tareaEnEdicion->tipoTest) && $tareaEnEdicion->tipoTest == 'integracion') ? 'selected' : ''; ?>>Integración</option>
+                    <option value="e2e" <?php echo ($tareaEnEdicion && isset($tareaEnEdicion->tipoTest) && $tareaEnEdicion->tipoTest == 'e2e') ? 'selected' : ''; ?>>E2E</option>
                 </select>
             </div>
             <div class="col">
@@ -210,9 +333,12 @@ if ($tareas === null) {
             <div class="col-auto">
                 <select name="filterEstado" class="form-select">
                     <option value="">Todos los estados</option>
-                    <option value="pendiente" <?php echo $filterEstado == 'pendiente' ? 'selected' : ''; ?>>Pendiente</option>
-                    <option value="en_progreso" <?php echo $filterEstado == 'en_progreso' ? 'selected' : ''; ?>>En Progreso</option>
-                    <option value="completada" <?php echo $filterEstado == 'completada' ? 'selected' : ''; ?>>Completada</option>
+                    <?php
+                    foreach ($estadosLegibles as $valor => $texto) {
+                        $selected = $filterEstado == $valor ? 'selected' : '';
+                        echo "<option value=\"$valor\" $selected>$texto</option>";
+                    }
+                    ?>
                 </select>
             </div>
             <div class="col-auto">
@@ -231,6 +357,7 @@ if ($tareas === null) {
                     <th><a href="index.php?action=sort&field=prioridad&direction=<?php echo $sortField == 'prioridad' && $sortDirection == 'ASC' ? 'DESC' : 'ASC'; ?>">Prioridad <?php echo $sortField == 'prioridad' ? ($sortDirection == 'ASC' ? '▲' : '▼') : ''; ?></a></th>
                     <th><a href="index.php?action=sort&field=tipo&direction=<?php echo $sortField == 'tipo' && $sortDirection == 'ASC' ? 'DESC' : 'ASC'; ?>">Tipo <?php echo $sortField == 'tipo' ? ($sortDirection == 'ASC' ? '▲' : '▼') : ''; ?></a></th>
                     <th><a href="index.php?action=sort&field=fechaCreacion&direction=<?php echo $sortField == 'fechaCreacion' && $sortDirection == 'ASC' ? 'DESC' : 'ASC'; ?>">Fecha Creación <?php echo $sortField == 'fechaCreacion' ? ($sortDirection == 'ASC' ? '▲' : '▼') : ''; ?></a></th>
+                    <th>Detalles Específicos</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -240,10 +367,11 @@ if ($tareas === null) {
                         <td><?php echo $tarea->id; ?></td>
                         <td><?php echo $tarea->titulo; ?></td>
                         <td><?php echo $tarea->descripcion; ?></td>
-                        <td><?php echo $tarea->estado; ?></td>
-                        <td><?php echo $tarea->prioridad; ?></td>
-                        <td><?php echo $tarea->tipo; ?></td>
+                        <td><?php echo isset($estadosLegibles[$tarea->estado]) ? $estadosLegibles[$tarea->estado] : $tarea->estado; ?></td>
+                        <td><?php echo isset($prioridadesLegibles[$tarea->prioridad]) ? $prioridadesLegibles[$tarea->prioridad] : $tarea->prioridad; ?></td>
+                        <td><?php echo ucfirst($tarea->tipo); ?></td>
                         <td><?php echo $tarea->fechaCreacion; ?></td>
+                        <td><?php echo method_exists($tarea, 'obtenerDetallesEspecificos') ? $tarea->obtenerDetallesEspecificos() : ''; ?></td>
                         <td>
                             <a href='index.php?action=edit&id=<?php echo $tarea->id; ?>' class='btn btn-sm btn-warning'><i class='fas fa-edit'></i></a>
                             <a href='index.php?action=delete&id=<?php echo $tarea->id; ?>' class='btn btn-sm btn-danger' onclick="return confirm('¿Está seguro de que desea eliminar esta tarea?');"><i class='fas fa-trash'></i></a>
@@ -252,9 +380,11 @@ if ($tareas === null) {
                                     Estado
                                 </button>
                                 <ul class='dropdown-menu'>
-                                    <li><a class='dropdown-item' href='index.php?action=status&id=<?php echo $tarea->id; ?>&estado=pendiente'>Pendiente</a></li>
-                                    <li><a class='dropdown-item' href='index.php?action=status&id=<?php echo $tarea->id; ?>&estado=en_progreso'>En Progreso</a></li>
-                                    <li><a class='dropdown-item' href='index.php?action=status&id=<?php echo $tarea->id; ?>&estado=completada'>Completada</a></li>
+                                    <?php
+                                    foreach ($estadosLegibles as $valor => $texto) {
+                                        echo "<li><a class='dropdown-item' href='index.php?action=status&id={$tarea->id}&estado={$valor}'>{$texto}</a></li>";
+                                    }
+                                    ?>
                                 </ul>
                             </div>
                         </td>
@@ -266,7 +396,8 @@ if ($tareas === null) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    document.getElementById('tipoTarea').addEventListener('change', function() {
+    function mostrarCamposEspecificos() {
+        const tipoTarea = document.getElementById('tipoTarea').value;
         const campoEspecifico = document.getElementById('campoEspecifico');
         const campoDesarrollo = document.getElementById('campoDesarrollo');
         const campoDiseno = document.getElementById('campoDiseno');
@@ -277,7 +408,7 @@ if ($tareas === null) {
         campoDiseno.style.display = 'none';
         campoTesting.style.display = 'none';
         
-        switch(this.value) {
+        switch(tipoTarea) {
             case 'desarrollo':
                 campoEspecifico.style.display = 'block';
                 campoDesarrollo.style.display = 'block';
@@ -291,8 +422,14 @@ if ($tareas === null) {
                 campoTesting.style.display = 'block';
                 break;
         }
-    });
+    }
+
+    document.getElementById('tipoTarea').addEventListener('change', mostrarCamposEspecificos);
+
+    // Ejecutar al cargar la página
+    window.onload = function() {
+        mostrarCamposEspecificos();
+    }
     </script>
 </body>
 </html>
-
